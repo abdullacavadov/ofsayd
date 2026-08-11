@@ -593,6 +593,107 @@ async function postAnswer({
 }
 
 
+
+
+function renderClubCountries() {
+  const container = document.getElementById("clubCountryList");
+
+  container.innerHTML = "";
+
+  const selectedCountryIds = new Set(
+    settings.clubCountries.map(c => Number(c.id))
+  );
+
+  COUNTRIES.forEach(country => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "country-setting-group";
+
+    const label = document.createElement("label");
+    label.className = "checkbox-row";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = country.id;
+    checkbox.dataset.countryId = country.id;
+    checkbox.className = "club-country-checkbox";
+    checkbox.checked = selectedCountryIds.has(country.id);
+
+    const text = document.createElement("span");
+    text.textContent = country.az;
+
+    label.appendChild(checkbox);
+    label.appendChild(text);
+
+    wrapper.appendChild(label);
+
+    const leagueContainer = document.createElement("div");
+    leagueContainer.className = "league-list";
+    leagueContainer.dataset.countryId = country.id;
+
+    wrapper.appendChild(leagueContainer);
+
+    container.appendChild(wrapper);
+  });
+
+  renderLeagues();
+
+  container
+    .querySelectorAll(".club-country-checkbox")
+    .forEach(checkbox => {
+      checkbox.addEventListener("change", () => {
+        renderLeagues();
+      });
+    });
+}
+
+
+function renderLeagues() {
+  const selectedCountryIds = new Set(
+    Array.from(
+      document.querySelectorAll(".club-country-checkbox:checked")
+    ).map(input => Number(input.value))
+  );
+
+  const selectedLeagueIds = new Set(
+    (settings.leagues || []).map(l => Number(l.id))
+  );
+
+  document
+    .querySelectorAll(".league-list")
+    .forEach(container => {
+      const countryId = Number(container.dataset.countryId);
+
+      container.innerHTML = "";
+
+      if (!selectedCountryIds.has(countryId)) {
+        return;
+      }
+
+      const countryLeagues = (settings.leagues || [])
+        .filter(league => Number(league.country_id) === countryId);
+
+      countryLeagues.forEach(league => {
+        const label = document.createElement("label");
+        label.className = "league-row";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = league.id;
+        checkbox.className = "league-checkbox";
+        checkbox.checked = selectedLeagueIds.has(Number(league.id));
+
+        const text = document.createElement("span");
+        text.textContent = league.name_az || league.name;
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+
+        container.appendChild(label);
+      });
+    });
+}
+
+
 // ---------- Tənzimləmələr ekranı ----------
 function renderCheckboxList(containerId, selectedCountries) {
   const container = document.getElementById(containerId);
@@ -702,6 +803,11 @@ document.getElementById("backFromSettings").addEventListener("click", () => show
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
   const clubCountries = collectChecked("clubCountryList");
   const nationalTeams = collectChecked("nationalTeamList");
+
+  const leagues = Array.from(
+    document.querySelectorAll(".league-checkbox:checked")
+  ).map(input => Number(input.value));
+
   const res = await fetch("./api/settings/save.php", {
     method: "POST",
     headers: {
@@ -710,7 +816,8 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
     credentials: "same-origin",
     body: JSON.stringify({
       clubCountries,
-      nationalTeams
+      nationalTeams,
+      leagues
     })
   });
 

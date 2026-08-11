@@ -64,7 +64,14 @@ try {
     $nationalTeams = $stmt->fetchAll();
 
     // Liqalar
-    $stmt = $pdo->prepare("
+    $clubCountryIds = array_column($clubCountries, 'id');
+
+    $leagues = [];
+
+    if ($clubCountryIds) {
+        $placeholders = implode(',', array_fill(0, count($clubCountryIds), '?'));
+
+        $stmt = $pdo->prepare("
         SELECT
             l.id,
             l.country_id,
@@ -72,17 +79,29 @@ try {
             l.name,
             l.name_az,
             l.sport
-        FROM user_setting_leagues usl
-        INNER JOIN leagues l
-            ON l.id = usl.league_id
-        WHERE usl.user_id = ?
+        FROM leagues l
+        WHERE l.country_id IN ($placeholders)
           AND l.is_active = 1
-        ORDER BY l.name_az
+        ORDER BY l.country_id, l.name_az
     ");
+
+        $stmt->execute($clubCountryIds);
+
+        $leagues = $stmt->fetchAll();
+    }
+
+    $stmt = $pdo->prepare("
+    SELECT league_id
+    FROM user_setting_leagues
+    WHERE user_id = ?
+");
 
     $stmt->execute([$userId]);
 
-    $leagues = $stmt->fetchAll();
+    $selectedLeagues = array_map(
+        'intval',
+        array_column($stmt->fetchAll(), 'league_id')
+    );
 
     jsonResponse([
         'success' => true,
@@ -90,7 +109,8 @@ try {
             'countries' => $countries,
             'clubCountries' => $clubCountries,
             'nationalTeams' => $nationalTeams,
-            'leagues' => $leagues
+            'leagues' => $leagues,
+            'selectedLeagues' => $selectedLeagues
         ]
     ]);
 

@@ -9,6 +9,21 @@ require_once '../../inc/auth.php';
 $userId = requireAuth();
 
 try {
+    //Bütün ölkələr
+    $stmt = $pdo->query("
+        SELECT
+            id,
+            api_key,
+            name_az,
+            flag
+        FROM countries
+        WHERE is_active = 1
+        ORDER BY name_az
+    ");
+
+    $countries = $stmt->fetchAll();
+
+
 
     // Klub ölkələri
     $stmt = $pdo->prepare("
@@ -72,6 +87,7 @@ try {
     jsonResponse([
         'success' => true,
         'data' => [
+            'countries' => $countries,
             'clubCountries' => $clubCountries,
             'nationalTeams' => $nationalTeams,
             'leagues' => $leagues

@@ -67,7 +67,7 @@ async function apiGet(endpoint, params = {}) {
   });
 
   const res = await fetch(
-    `/api/football/proxy.php?${query.toString()}`,
+    `../../api/football/proxy.php?${query.toString()}`,
     {
       credentials: 'same-origin'
     }
@@ -199,7 +199,7 @@ function renderScore() {
 }
 
 async function loadScore() {
-  const res = await fetch("/api/score/get.php", {
+  const res = await fetch("../../api/score/get.php", {
     credentials: "same-origin"
   });
 
@@ -219,7 +219,7 @@ async function loadScore() {
 }
 
 async function loadSettings() {
-  const res = await fetch("/api/settings/get.php", {
+  const res = await fetch("../../api/settings/get.php", {
     credentials: "same-origin"
   });
 
@@ -232,7 +232,7 @@ async function loadSettings() {
 
   if (!data.success) {
     throw new Error(
-      data.message || "Settings yüklənmədi."
+      data.message || "Tənzimləmələr yüklənmədi."
     );
   }
 
@@ -270,7 +270,7 @@ async function loadSettings() {
 
 
 async function startGame(gameMode) {
-  const res = await fetch("/api/game/start.php", {
+  const res = await fetch("../../api/game/start.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -302,7 +302,7 @@ async function startGame(gameMode) {
 async function finishGame() {
   if (!gameId) return;
 
-  const res = await fetch("/api/game/finish.php", {
+  const res = await fetch("../../api/game/finish.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -563,7 +563,7 @@ async function postAnswer({
     points: points
   };
 
-  const res = await fetch("/api/game/answer.php", {
+  const res = await fetch("../../api/game/answer.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -704,7 +704,7 @@ document.getElementById("backFromSettings").addEventListener("click", () => show
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
   const clubCountries = collectChecked("clubCountryList");
   const nationalTeams = collectChecked("nationalTeamList");
-  const res = await fetch("/api/settings/save.php", {
+  const res = await fetch("../../api/settings/save.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -752,7 +752,7 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
 
 
 async function login(username, password) {
-  const res = await fetch("/api/auth/login.php", {
+  const res = await fetch("../../api/auth/login.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -779,7 +779,7 @@ async function login(username, password) {
 }
 
 async function register(username, email, password) {
-  const res = await fetch("/api/auth/register.php", {
+  const res = await fetch("../../api/auth/register.php", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -810,7 +810,7 @@ async function logout() {
     }
   }
 
-  await fetch("/api/auth/logout.php", {
+  await fetch("../../api/auth/logout.php", {
     method: "POST",
     credentials: "same-origin"
   });

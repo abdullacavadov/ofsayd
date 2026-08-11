@@ -1,20 +1,20 @@
 // ---------- Ölkə kataloqu (klub ligası + bayraq kodu ilə) ----------
 const COUNTRIES = [
-  { key: "England",     az: "İngiltərə",   leagueId: "4328", flag: "gb-eng" },
-  { key: "Spain",       az: "İspaniya",    leagueId: "4335", flag: "es" },
-  { key: "Italy",       az: "İtaliya",     leagueId: "4332", flag: "it" },
-  { key: "Germany",     az: "Almaniya",    leagueId: "4331", flag: "de" },
-  { key: "France",      az: "Fransa",      leagueId: "4334", flag: "fr" },
-  { key: "Portugal",    az: "Portuqaliya", leagueId: "4344", flag: "pt" },
-  { key: "Netherlands", az: "Niderland",   leagueId: "4337", flag: "nl" },
-  { key: "Turkey",      az: "Türkiyə",     leagueId: "4339", flag: "tr" },
-  { key: "Brazil",      az: "Braziliya",   leagueId: "4351", flag: "br" },
-  { key: "Argentina",   az: "Argentina",   leagueId: "4406", flag: "ar" },
-  { key: "Belgium",     az: "Belçika",     leagueId: "4338", flag: "be" },
-  { key: "Scotland",    az: "Şotlandiya",  leagueId: "4330", flag: "gb-sct" },
-  { key: "Russia",      az: "Rusiya",      leagueId: "4355", flag: "ru" },
-  { key: "United States", az: "ABŞ",       leagueId: "4346", flag: "us" },
-  { key: "Azerbaijan",  az: "Azərbaycan",  leagueId: null,   flag: "az" }
+  { key: "England", az: "İngiltərə", leagueId: "4328", flag: "gb-eng" },
+  { key: "Spain", az: "İspaniya", leagueId: "4335", flag: "es" },
+  { key: "Italy", az: "İtaliya", leagueId: "4332", flag: "it" },
+  { key: "Germany", az: "Almaniya", leagueId: "4331", flag: "de" },
+  { key: "France", az: "Fransa", leagueId: "4334", flag: "fr" },
+  { key: "Portugal", az: "Portuqaliya", leagueId: "4344", flag: "pt" },
+  { key: "Netherlands", az: "Niderland", leagueId: "4337", flag: "nl" },
+  { key: "Turkey", az: "Türkiyə", leagueId: "4339", flag: "tr" },
+  { key: "Brazil", az: "Braziliya", leagueId: "4351", flag: "br" },
+  { key: "Argentina", az: "Argentina", leagueId: "4406", flag: "ar" },
+  { key: "Belgium", az: "Belçika", leagueId: "4338", flag: "be" },
+  { key: "Scotland", az: "Şotlandiya", leagueId: "4330", flag: "gb-sct" },
+  { key: "Russia", az: "Rusiya", leagueId: "4355", flag: "ru" },
+  { key: "United States", az: "ABŞ", leagueId: "4346", flag: "us" },
+  { key: "Azerbaijan", az: "Azərbaycan", leagueId: null, flag: "az" }
 ];
 
 const countryByKey = Object.fromEntries(COUNTRIES.map(c => [c.key, c]));
@@ -76,11 +76,32 @@ function teamNameMatches(apiTeamName, requiredClubName) {
 }
 
 // ---------- API sarğıları (server proxy üzərindən) ----------
-async function apiGet(endpoint, params) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/football/${endpoint}?${qs}`);
-  if (!res.ok) throw new Error("API sorğusu uğursuz oldu");
-  return res.json();
+async function apiGet(endpoint, params = {}) {
+  const query = new URLSearchParams({
+    endpoint,
+    ...params
+  });
+
+  const res = await fetch(
+    `/api/football/proxy.php?${query.toString()}`,
+    {
+      credentials: 'same-origin'
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("API sorğusu uğursuz oldu");
+  }
+
+  const data = await res.json();
+
+  if (data.success === false) {
+    throw new Error(
+      data.message || "API sorğusu uğursuz oldu"
+    );
+  }
+
+  return data;
 }
 
 const leagueIdCache = {}; // countryKey -> resolved idLeague
@@ -179,12 +200,42 @@ function renderScore() {
 }
 
 async function loadScore() {
-  score = await fetch("/api/score").then(r => r.json());
+  const res = await fetch("/api/score/get.php", {
+    credentials: "same-origin"
+  });
+
+  if (res.status === 401) {
+    showLogin();
+    return;
+  }
+
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(data.message || "Xal yüklənmədi.");
+  }
+
+  score = data.data;
   renderScore();
 }
 
 async function loadSettings() {
-  settings = await fetch("/api/settings").then(r => r.json());
+  const res = await fetch("/api/settings/get.php", {
+    credentials: "same-origin"
+  });
+
+  if (res.status === 401) {
+    showLogin();
+    return;
+  }
+
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(data.message || "Settings yüklənmədi.");
+  }
+
+  settings = data.data;
 }
 
 // ---------- Timer ----------
@@ -438,11 +489,27 @@ document.getElementById("backFromSettings").addEventListener("click", () => show
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
   const clubCountries = collectChecked("clubCountryList");
   const nationalTeams = collectChecked("nationalTeamList");
-  settings = await fetch("/api/settings", {
+  const res = await fetch("/api/settings/save.php", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clubCountries, nationalTeams })
-  }).then(r => r.json());
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      clubCountries,
+      nationalTeams
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    throw new Error(
+      data.message || "Tənzimləmələr yadda saxlanılmadı."
+    );
+  }
+
+  settings = data.data;
   document.getElementById("saveStatus").textContent = "Yadda saxlanıldı ✓";
   setTimeout(() => (document.getElementById("saveStatus").textContent = ""), 2000);
 });

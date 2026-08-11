@@ -1,0 +1,12 @@
+{
+  "name": "futbol-bilik-yoxlama",
+  "version": "1.0.0",
+  "description": "Mini futbol bilik yoxlama veb app-ı",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

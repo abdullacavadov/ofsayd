@@ -4,7 +4,12 @@ let COUNTRIES = [];
 let countryByKey = {};
 
 // ---------- Vəziyyət ----------
-let settings = { clubCountries: [], nationalTeams: [] };
+let settings = {
+  clubCountries: [],
+  nationalTeams: [],
+  leagues: [],
+  selectedLeagues: []
+};
 let score = { total: 0, correct: 0, wrong: 0 };
 let mode = null; // "country-club" | "club-club"
 let current = null; // cari sualın datası
@@ -597,27 +602,22 @@ async function postAnswer({
 
 
 function renderLeagues() {
-  const list = document.getElementById("leagueList");
+  const container = document.getElementById("leagueList");
 
-  list.innerHTML = "";
+  container.innerHTML = "";
 
-  // Hazırda UI-da seçilmiş klub ölkələri
   const selectedCountryIds = new Set(
     Array.from(
       document.querySelectorAll("#clubCountryList input:checked")
     ).map(input => Number(input.value))
   );
 
-  const leagues = (settings.leagues || []).filter(league =>
-    selectedCountryIds.has(Number(league.country_id))
-  );
-
-  if (!leagues.length) {
-    return;
-  }
-
   const selectedLeagueIds = new Set(
     (settings.selectedLeagues || []).map(id => Number(id))
+  );
+
+  const leagues = (settings.leagues || []).filter(league =>
+    selectedCountryIds.has(Number(league.country_id))
   );
 
   leagues.forEach(league => {
@@ -627,25 +627,18 @@ function renderLeagues() {
     const checkbox = document.createElement("input");
 
     checkbox.type = "checkbox";
-    checkbox.className = "league-checkbox";
     checkbox.value = Number(league.id);
+    checkbox.className = "league-checkbox";
     checkbox.checked = selectedLeagueIds.has(Number(league.id));
-
-    checkbox.addEventListener("change", () => {
-      settings.selectedLeagues = Array.from(
-        document.querySelectorAll("#leagueList .league-checkbox:checked")
-      ).map(input => Number(input.value));
-    });
 
     const span = document.createElement("span");
 
-    span.textContent =
-      league.name_az || league.name;
+    span.textContent = league.name_az || league.name;
 
     label.appendChild(checkbox);
     label.appendChild(span);
 
-    list.appendChild(label);
+    container.appendChild(label);
   });
 }
 
@@ -680,7 +673,6 @@ function renderCheckboxList(containerId, selectedCountries) {
 
     container.appendChild(label);
 
-    // Yalnız klub ölkələri dəyişəndə liqaları yenilə
     if (containerId === "clubCountryList") {
       input.addEventListener("change", () => {
         renderLeagues();
@@ -695,9 +687,21 @@ function collectChecked(containerId) {
 
 async function openSettings() {
   await loadSettings();
-  renderCheckboxList("clubCountryList", settings.clubCountries);
-  renderCheckboxList("nationalTeamList", settings.nationalTeams);
+
+  renderCheckboxList(
+    "clubCountryList",
+    settings.clubCountries
+  );
+
+  renderCheckboxList(
+    "nationalTeamList",
+    settings.nationalTeams
+  );
+
+  renderLeagues();
+
   document.getElementById("saveStatus").textContent = "";
+
   showView("settings");
 }
 

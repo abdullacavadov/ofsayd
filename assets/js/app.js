@@ -293,8 +293,6 @@ async function startGame(gameMode) {
   }
 
   gameId = Number(data.data.game_id);
-  mode = data.data.mode;
-
   return true;
 }
 

@@ -49,7 +49,8 @@ try {
         jsonResponse([
             'success' => true,
             'data' => [
-                'game_id' => (int) $game['id']
+                'game_id' => (int) $game['id'],
+                'mode' => $game['mode']
             ]
         ]);
     }
@@ -64,7 +65,8 @@ try {
     jsonResponse([
         'success' => true,
         'data' => [
-            'game_id' => (int) $pdo->lastInsertId()
+            'game_id' => (int) $pdo->lastInsertId(),
+            'mode' => $mode
         ]
     ]);
 

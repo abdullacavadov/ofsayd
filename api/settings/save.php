@@ -29,12 +29,14 @@ if (!is_array($input)) {
 
 $clubCountries = $input['clubCountries'] ?? [];
 $nationalTeams = $input['nationalTeams'] ?? [];
-$leagues = $input['leagues'] ?? [];
+
+$leaguesProvided = array_key_exists('leagues', $input);
+$leagues = $leaguesProvided ? $input['leagues'] : null;
 
 if (
     !is_array($clubCountries) ||
     !is_array($nationalTeams) ||
-    !is_array($leagues)
+    ($leaguesProvided && !is_array($leagues))
 ) {
     jsonResponse([
         'success' => false,
@@ -58,11 +60,13 @@ $nationalTeams = array_values(
     )
 );
 
-$leagues = array_values(
-    array_unique(
-        array_map('intval', $leagues)
-    )
-);
+if ($leaguesProvided) {
+    $leagues = array_values(
+        array_unique(
+            array_map('intval', $leagues)
+        )
+    );
+}
 
 /*
  * 0 və mənfi ID-ləri silirik.
@@ -81,12 +85,14 @@ $nationalTeams = array_values(
     )
 );
 
-$leagues = array_values(
-    array_filter(
-        $leagues,
-        fn(int $id): bool => $id > 0
-    )
-);
+if ($leaguesProvided) {
+    $leagues = array_values(
+        array_filter(
+            $leagues,
+            fn(int $id): bool => $id > 0
+        )
+    );
+}
 
 try {
 
@@ -110,12 +116,14 @@ try {
 
     $stmt->execute([$userId]);
 
-    $stmt = $pdo->prepare("
-        DELETE FROM user_setting_leagues
-        WHERE user_id = ?
-    ");
+    if ($leaguesProvided) {
+        $stmt = $pdo->prepare("
+            DELETE FROM user_setting_leagues
+            WHERE user_id = ?
+        ");
 
-    $stmt->execute([$userId]);
+        $stmt->execute([$userId]);
+    }
 
 
     /*

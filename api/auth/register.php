@@ -107,7 +107,7 @@ try {
     if ($stmt->fetch()) {
         jsonResponse([
             'success' => false,
-            'message' => 'Bu username artıq istifadə olunur.'
+            'message' => 'Bu istifadəçi adı artıq istifadə olunur.'
         ], 409);
     }
 

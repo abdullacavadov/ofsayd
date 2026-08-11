@@ -1,3 +1,5 @@
+let authMode = "login";
+
 let gameId = null;
 
 let COUNTRIES = [];
@@ -18,6 +20,216 @@ let timeLeft = 10;
 let answered = false;
 
 const teamsCache = {}; // leagueName -> [{name, badge}]
+
+
+
+async function checkAuth() {
+  try {
+    const res = await fetch("./api/auth/me.php", {
+      credentials: "same-origin"
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      showAuth("login");
+      return;
+    }
+
+    await loadSettings();
+
+    showView("menu");
+
+  } catch (error) {
+    showAuth("login");
+  }
+}
+
+
+async function init() {
+  try {
+    const res = await fetch("./api/auth/me.php", {
+      credentials: "same-origin"
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      showAuth("login");
+      return;
+    }
+
+    document
+      .getElementById("authenticatedUI")
+      .classList.remove("hidden");
+
+    await Promise.all([
+      loadScore(),
+      loadSettings()
+    ]);
+
+    showView("menu");
+
+  } catch (error) {
+    console.error(error);
+
+    document
+      .getElementById("authenticatedUI")
+      .classList.add("hidden");
+
+    showAuth("login");
+  }
+}
+
+init();
+
+
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const authTitle = document.getElementById("authTitle");
+const authSubtitle = document.getElementById("authSubtitle");
+const authSwitchBtn = document.getElementById("authSwitchBtn");
+const authFeedback = document.getElementById("authFeedback");
+
+
+function showAuth(mode = "login") {
+  authMode = mode;
+
+  authTitle.textContent =
+    mode === "login" ? "Daxil ol" : "Qeydiyyatdan keç";
+
+  authSubtitle.textContent =
+    mode === "login"
+      ? "Oyuna davam etmək üçün hesabına daxil ol."
+      : "Oynamağa başlamaq üçün hesab yarat.";
+
+  loginForm.classList.toggle("hidden", mode !== "login");
+  registerForm.classList.toggle("hidden", mode !== "register");
+
+  authSwitchBtn.textContent =
+    mode === "login"
+      ? "Hesabın yoxdur? Qeydiyyatdan keç"
+      : "Artıq hesabın var? Daxil ol";
+
+  authFeedback.textContent = "";
+
+  showView("auth");
+}
+
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const login = document.getElementById("loginInput").value.trim();
+  const password = document.getElementById("loginPassword").value;
+
+  const feedback = document.getElementById("authFeedback");
+
+  feedback.textContent = "";
+
+  try {
+    const res = await fetch("./api/auth/login.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        login,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "Login uğursuz oldu."
+      );
+    }
+
+    loginForm.reset();
+
+    document.getElementById("authenticatedUI").classList.remove("hidden");
+
+    await loadSettings();
+
+    showView("menu");
+
+  } catch (error) {
+    authFeedback.textContent = error.message;
+  }
+});
+
+
+console.log({
+  loginForm,
+  registerForm,
+  authTitle,
+  authSubtitle,
+  authSwitchBtn,
+  authFeedback
+});
+
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const username =
+    document.getElementById("registerUsername").value.trim();
+
+  const email =
+    document.getElementById("registerEmail").value.trim();
+
+  const password =
+    document.getElementById("registerPassword").value;
+
+  authFeedback.textContent = "";
+
+  try {
+    const res = await fetch("./api/auth/register.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        username,
+        email,
+        password
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "Qeydiyyat uğursuz oldu."
+      );
+    }
+
+    registerForm.reset();
+
+    document.getElementById("authenticatedUI").classList.remove("hidden");
+
+    await loadSettings();
+
+    showView("menu");
+
+  } catch (error) {
+    authFeedback.textContent = error.message;
+  }
+});
+
+
+document.getElementById("authSwitchBtn").addEventListener("click", () => {
+  showAuth(
+    authMode === "login"
+      ? "register"
+      : "login"
+  );
+});
+
 
 // ---------- Köməkçi: normalizasiya və fuzzy müqayisə ----------
 function normalize(str) {
@@ -186,13 +398,22 @@ async function randomClub(allowedCountries) {
 
 // ---------- Ekranlar arası keçid ----------
 const views = {
+  auth: document.getElementById("authView"),
   menu: document.getElementById("menuView"),
   game: document.getElementById("gameView"),
   settings: document.getElementById("settingsView")
 };
 
 function showView(name) {
-  Object.values(views).forEach(v => v.classList.add("hidden"));
+  Object.values(views).forEach(v => {
+    v.classList.add("hidden");
+  });
+
+  if (!views[name]) {
+    console.error(`View tapılmadı: ${name}`);
+    return;
+  }
+
   views[name].classList.remove("hidden");
 }
 
@@ -209,7 +430,7 @@ async function loadScore() {
   });
 
   if (res.status === 401) {
-    showLogin();
+    showAuth("login");
     return;
   }
 
@@ -229,7 +450,7 @@ async function loadSettings() {
   });
 
   if (res.status === 401) {
-    showLogin();
+    showAuth("login");
     return;
   }
 
@@ -289,7 +510,7 @@ async function startGame(gameMode) {
   });
 
   if (res.status === 401) {
-    showLogin();
+    showAuth("login");
     return false;
   }
 
@@ -319,7 +540,7 @@ async function finishGame() {
   });
 
   if (res.status === 401) {
-    showLogin();
+    showAuth("login");
     return;
   }
 
@@ -578,7 +799,7 @@ async function postAnswer({
   });
 
   if (res.status === 401) {
-    showLogin();
+    showAuth("login");
     return;
   }
 
@@ -768,6 +989,7 @@ document.getElementById("quitBtn").addEventListener("click", async () => {
 
 document.getElementById("settingsBtn").addEventListener("click", openSettings);
 document.getElementById("backFromSettings").addEventListener("click", () => showView("menu"));
+document.getElementById("logoutBtn").addEventListener("click", logout);
 
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
   const clubCountries = collectChecked("clubCountryList");
@@ -812,68 +1034,7 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
 });
 
 
-// ---------- Başlanğıc ----------
-(async function init() {
-  try {
-    await Promise.all([
-      loadScore(),
-      loadSettings()
-    ]);
-  } catch (e) {
-    console.error(e);
-  }
-})();
 
-
-async function login(username, password) {
-  const res = await fetch("./api/auth/login.php", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "same-origin",
-    body: JSON.stringify({
-      username,
-      password
-    })
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    throw new Error(data.message || "Giriş mümkün olmadı.");
-  }
-
-  await Promise.all([
-    loadScore(),
-    loadSettings()
-  ]);
-
-  showView("menu");
-}
-
-async function register(username, email, password) {
-  const res = await fetch("./api/auth/register.php", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "same-origin",
-    body: JSON.stringify({
-      username,
-      email,
-      password
-    })
-  });
-
-  const data = await res.json();
-
-  if (!data.success) {
-    throw new Error(data.message || "Qeydiyyat mümkün olmadı.");
-  }
-
-  await login(username, password);
-}
 
 async function logout() {
   if (gameId) {
@@ -896,5 +1057,7 @@ async function logout() {
     wrong: 0
   };
 
-  showLogin();
+  document.getElementById("authenticatedUI").classList.add("hidden");
+
+  showAuth("login");
 }

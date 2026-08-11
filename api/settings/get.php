@@ -64,31 +64,28 @@ try {
     $nationalTeams = $stmt->fetchAll();
 
     // Liqalar
-    $clubCountryIds = array_column($clubCountries, 'id');
+    // Bütün aktiv liqalar
+    $stmt = $pdo->query("
+    SELECT
+        l.id,
+        l.country_id,
+        l.api_id,
+        l.name,
+        l.name_az,
+        l.sport,
+        l.is_top_tier,
+        l.is_active
+    FROM leagues l
+    WHERE l.is_active = 1
+    ORDER BY l.country_id, l.name
+");
 
-    $leagues = [];
+    $leagues = $stmt->fetchAll();
 
-    if ($clubCountryIds) {
-        $placeholders = implode(',', array_fill(0, count($clubCountryIds), '?'));
 
-        $stmt = $pdo->prepare("
-        SELECT
-            l.id,
-            l.country_id,
-            l.api_id,
-            l.name,
-            l.name_az,
-            l.sport
-        FROM leagues l
-        WHERE l.country_id IN ($placeholders)
-          AND l.is_active = 1
-        ORDER BY l.country_id, l.name_az
-    ");
 
-        $stmt->execute($clubCountryIds);
 
-        $leagues = $stmt->fetchAll();
-    }
+
 
     $stmt = $pdo->prepare("
     SELECT league_id

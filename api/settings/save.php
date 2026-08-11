@@ -208,6 +208,6 @@ try {
 
     jsonResponse([
         'success' => false,
-        'message' => 'Settings yadda saxlanılarkən xəta baş verdi.'
+        'message' => 'Settings yadda saxlanılarkən xəta baş verdi: ' . $e->getMessage()
     ], 500);
 }

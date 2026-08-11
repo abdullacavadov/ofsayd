@@ -16,9 +16,12 @@
   --font-mono: "Space Mono", monospace;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
@@ -30,8 +33,12 @@ html, body {
 body {
   background-image:
     radial-gradient(ellipse at 50% -10%, rgba(244, 180, 0, 0.10), transparent 55%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 44px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 44px);
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 44px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 1px, transparent 1px, transparent 44px);
+}
+
+.hidden {
+  display: none !important;
 }
 
 .stadium-glow {
@@ -41,7 +48,7 @@ body {
   transform: translateX(-50%);
   width: 900px;
   height: 420px;
-  background: radial-gradient(ellipse at center, rgba(244,180,0,0.18), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(244, 180, 0, 0.18), transparent 70%);
   filter: blur(10px);
   pointer-events: none;
   z-index: 0;
@@ -57,8 +64,16 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
-.brand { display: flex; align-items: center; gap: 8px; }
-.brand-mark { font-size: 20px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-mark {
+  font-size: 20px;
+}
+
 .brand-name {
   font-family: var(--font-display);
   font-weight: 700;
@@ -66,9 +81,16 @@ body {
   font-size: 20px;
   color: var(--chalk);
 }
-.brand-q { color: var(--accent); }
 
-.topbar-right { display: flex; align-items: center; gap: 10px; }
+.brand-q {
+  color: var(--accent);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .score-pill {
   display: flex;
@@ -79,12 +101,14 @@ body {
   border-radius: 999px;
   padding: 6px 14px;
 }
+
 .score-label {
   font-family: var(--font-display);
   font-size: 11px;
   letter-spacing: 0.12em;
   color: var(--text-dim);
 }
+
 .score-value {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -103,8 +127,14 @@ body {
   cursor: pointer;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.icon-btn:hover { border-color: var(--accent); }
-.icon-btn:focus-visible, button:focus-visible, input:focus-visible {
+
+.icon-btn:hover {
+  border-color: var(--accent);
+}
+
+.icon-btn:focus-visible,
+button:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -117,7 +147,6 @@ main#app {
   padding: 40px 20px 80px;
 }
 
-.view.hidden { display: none; }
 
 .eyebrow {
   font-family: var(--font-mono);
@@ -150,7 +179,9 @@ main#app {
 }
 
 @media (max-width: 560px) {
-  .mode-grid { grid-template-columns: 1fr; }
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mode-card {
@@ -173,7 +204,9 @@ main#app {
   background: var(--card-2);
 }
 
-.mode-icon { font-size: 24px; }
+.mode-icon {
+  font-size: 24px;
+}
 
 .mode-title {
   font-family: var(--font-display);
@@ -230,7 +263,7 @@ main#app {
   width: 84px;
   height: 84px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
 }
 
 .matchup-name {
@@ -258,12 +291,18 @@ main#app {
   justify-content: center;
 }
 
-.timer-ring { width: 90px; height: 90px; transform: rotate(-90deg); }
+.timer-ring {
+  width: 90px;
+  height: 90px;
+  transform: rotate(-90deg);
+}
+
 .timer-track {
   fill: none;
   stroke: var(--line);
   stroke-width: 8;
 }
+
 .timer-progress {
   fill: none;
   stroke: var(--accent);
@@ -273,7 +312,10 @@ main#app {
   stroke-dashoffset: 0;
   transition: stroke-dashoffset 0.1s linear, stroke 0.2s ease;
 }
-.timer-progress.danger { stroke: var(--danger); }
+
+.timer-progress.danger {
+  stroke: var(--danger);
+}
 
 .timer-number {
   position: absolute;
@@ -289,7 +331,23 @@ main#app {
   margin-top: 24px;
 }
 
-.answer-form input {
+.answer-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.login-form,
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.answer-form input,
+.login-form input,
+.register-form input {
   flex: 1;
   background: var(--card);
   border: 1px solid var(--line);
@@ -300,7 +358,11 @@ main#app {
   font-family: var(--font-body);
 }
 
-.answer-form input::placeholder { color: var(--text-dim); }
+.answer-form input::placeholder,
+.login-form input::placeholder,
+.register-form input::placeholder {
+  color: var(--text-dim);
+}
 
 .submit-btn {
   background: var(--accent);
@@ -315,9 +377,19 @@ main#app {
   cursor: pointer;
   transition: transform 0.12s ease, filter 0.12s ease;
 }
-.submit-btn:hover { filter: brightness(1.08); }
-.submit-btn:active { transform: scale(0.97); }
-.submit-btn:disabled { opacity: 0.5; cursor: default; }
+
+.submit-btn:hover {
+  filter: brightness(1.08);
+}
+
+.submit-btn:active {
+  transform: scale(0.97);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 
 .hint-text {
   margin: 10px 2px 0;
@@ -332,9 +404,18 @@ main#app {
   font-size: 14px;
   line-height: 1.5;
 }
-.feedback.correct { color: var(--accent-2); }
-.feedback.wrong { color: var(--danger); }
-.feedback.loading { color: var(--text-dim); }
+
+.feedback.correct {
+  color: var(--accent-2);
+}
+
+.feedback.wrong {
+  color: var(--danger);
+}
+
+.feedback.loading {
+  color: var(--text-dim);
+}
 
 .game-actions {
   margin-top: 26px;
@@ -354,9 +435,19 @@ main#app {
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
-.ghost-btn:hover { border-color: var(--accent); }
-.ghost-btn.subtle { color: var(--text-dim); border-color: transparent; }
-.ghost-btn.subtle:hover { color: var(--chalk); }
+
+.ghost-btn:hover {
+  border-color: var(--accent);
+}
+
+.ghost-btn.subtle {
+  color: var(--text-dim);
+  border-color: transparent;
+}
+
+.ghost-btn.subtle:hover {
+  color: var(--chalk);
+}
 
 /* --- Settings view --- */
 .settings-columns {
@@ -367,7 +458,9 @@ main#app {
 }
 
 @media (max-width: 560px) {
-  .settings-columns { grid-template-columns: 1fr; }
+  .settings-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .settings-col-title {
@@ -396,8 +489,16 @@ main#app {
   cursor: pointer;
   font-size: 14px;
 }
-.checkbox-row:hover { background: var(--card); }
-.checkbox-row input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.checkbox-row:hover {
+  background: var(--card);
+}
+
+.checkbox-row input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
 
 .settings-actions {
   margin-top: 28px;
@@ -441,11 +542,24 @@ main#app {
   cursor: pointer;
   white-space: nowrap;
 }
-.danger-btn:hover { background: rgba(228, 87, 46, 0.12); }
 
-.settings-view + .ghost-btn { margin-top: 20px; }
-#backFromSettings { margin-top: 24px; }
+.danger-btn:hover {
+  background: rgba(228, 87, 46, 0.12);
+}
+
+.settings-view+.ghost-btn {
+  margin-top: 20px;
+}
+
+#backFromSettings {
+  margin-top: 24px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .timer-progress, .mode-card, .icon-btn { transition: none; }
+
+  .timer-progress,
+  .mode-card,
+  .icon-btn {
+    transition: none;
+  }
 }

@@ -66,14 +66,14 @@ try {
     if (!$user || empty($user['password_hash'])) {
         jsonResponse([
             'success' => false,
-            'message' => 'Username/email və ya şifrə yanlışdır.'
+            'message' => 'İstifadəçi adı və ya şifrə yanlışdır.'
         ], 401);
     }
 
     if (!password_verify($password, $user['password_hash'])) {
         jsonResponse([
             'success' => false,
-            'message' => 'Username/email və ya şifrə yanlışdır.'
+            'message' => 'İstifadəçi adı və ya şifrə yanlışdır.'
         ], 401);
     }
 

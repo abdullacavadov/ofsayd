@@ -7,6 +7,7 @@
   --chalk: #ECE8DA;
   --text: #ECE8DA;
   --text-dim: #9FBBA9;
+  --primary: rgb(20, 94, 198);
   --accent: #F4B400;
   --accent-2: #6FCF97;
   --danger: #E4572E;
@@ -448,6 +449,77 @@ main#app {
 .ghost-btn.subtle:hover {
   color: var(--chalk);
 }
+
+
+.next-btn-timer,
+.next-btn-countdown {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.next-btn-timer::after,
+.next-btn-countdown::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid currentColor;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.next-btn-timer::after {
+  clip-path: inset(0 100% 0 0);
+  animation: nextBtnTimer 10s linear forwards;
+}
+
+.next-btn-countdown::after {
+  clip-path: inset(0 100% 0 0);
+  animation: nextBtnCountdown 5s linear forwards;
+}
+
+@keyframes nextBtnTimer {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes nextBtnCountdown {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+
+.game-stats{
+  display: inline-flex;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.game-stats .game-stat{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 15px;
+  font-size: 28px;
+}
+
+.game-stat small{
+  font-size: 12px !important;
+}
+
+
 
 /* --- Settings view --- */
 .settings-columns {

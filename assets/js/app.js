@@ -448,9 +448,40 @@ function showView(name) {
 
 // ---------- Xal göstəricisi ----------
 function renderScore() {
-  document.getElementById("scoreValue").textContent = score.total;
-  document.getElementById("scoreSummary").textContent =
-    `Düzgün: ${score.correct}  ·  Səhv: ${score.wrong}`;
+  // Ümumi istifadəçi xalı
+  const scoreValue = document.getElementById("scoreValue");
+
+  if (scoreValue) {
+    scoreValue.textContent = Number(score.totalScore || 0);
+  }
+
+
+  // Cari oyun statistikası
+  const totalQuestions = document.getElementById("gameTotalQuestions");
+  const correct = document.getElementById("gameCorrect");
+  const wrong = document.getElementById("gameWrong");
+  const skipped = document.getElementById("gameSkipped");
+  const gameScore = document.getElementById("gameGameScore");
+
+  if (totalQuestions) {
+    totalQuestions.textContent = Number(score.totalQuestions || 0);
+  }
+
+  if (correct) {
+    correct.textContent = Number(score.correct || 0);
+  }
+
+  if (wrong) {
+    wrong.textContent = Number(score.wrong || 0);
+  }
+
+  if (skipped) {
+    skipped.textContent = Number(score.skipped || 0);
+  }
+
+  if (gameScore) {
+    gameScore.textContent = Number(score.total || 0);
+  }
 }
 
 async function loadScore() {
@@ -469,7 +500,15 @@ async function loadScore() {
     throw new Error(data.message || "Xal yüklənmədi.");
   }
 
-  score = data.data;
+  score = {
+    total: data.data.game?.game_score || 0,
+    correct: data.data.game?.correct || 0,
+    wrong: data.data.game?.wrong || 0,
+    totalQuestions: data.data.game?.total_questions || 0,
+    skipped: data.data.game?.skipped || 0,
+    totalScore: data.data.total_score || 0
+  };
+
   renderScore();
 }
 
@@ -737,6 +776,54 @@ async function buildQuestion() {
     document.getElementById("sideBTag").textContent = "Klub";
   }
 
+  const questionRes = await fetch("./api/game/question.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      game_id: gameId
+    })
+  });
+
+  if (questionRes.status === 401) {
+    showAuth("login");
+    return;
+  }
+
+  const questionData = await questionRes.json();
+
+  if (!questionData.success) {
+    throw new Error(
+      questionData.message || "Sual yadda saxlanılmadı."
+    );
+  }
+
+  score.totalQuestions = Number(
+    questionData.data.total_questions || 0
+  );
+
+  score.correct = Number(
+    questionData.data.correct || 0
+  );
+
+  score.wrong = Number(
+    questionData.data.wrong || 0
+  );
+
+  score.skipped = Number(
+    questionData.data.skipped || 0
+  );
+
+  score.total = Number(
+    questionData.data.game_score || 0
+  );
+
+  renderScore();
+
+  startQuestionTimerVisual();
+
   startTimer(() => finishRound(""));
 }
 
@@ -745,7 +832,7 @@ async function verifyAnswer(playerName) {
   if (!playerName.trim()) return { ok: false, reason: "Cavab boş idi." };
 
   const player = await searchPlayer(playerName.trim());
-  if (!player) return { ok: false, reason: "Bu adda oyunçu tapılmadı." };
+  if (!player) return { ok: false, reason: "Bu adda oyunçu tapılmadı. Növbəti suala hazırlaş" };
 
   if (current.type === "country-club") {
     const nationOk = namesMatch(player.strNationality, current.nation.key);
@@ -757,8 +844,8 @@ async function verifyAnswer(playerName) {
       } catch (e) { /* former teams alınmadı, davam et */ }
     }
     if (nationOk && clubOk) return { ok: true, player };
-    if (!nationOk) return { ok: false, reason: `${player.strPlayer} tapıldı, amma millət uyğun gəlmədi.` };
-    return { ok: false, reason: `${player.strPlayer} tapıldı, amma bu klubda oynadığı görünmür.` };
+    if (!nationOk) return { ok: false, reason: `${player.strPlayer} tapıldı, amma millət uyğun gəlmədi. Növbəti suala hazırlaş.` };
+    return { ok: false, reason: `${player.strPlayer} tapıldı, amma bu klubda oynadığı görünmür. Növbəti suala hazırlaş.` };
   } else {
     const teams = [player.strTeam || ""];
     if (player.idPlayer) {
@@ -770,7 +857,7 @@ async function verifyAnswer(playerName) {
     const matchA = teams.some(t => teamNameMatches(t, current.clubA.name));
     const matchB = teams.some(t => teamNameMatches(t, current.clubB.name));
     if (matchA && matchB) return { ok: true, player };
-    return { ok: false, reason: `${player.strPlayer} tapıldı, amma hər iki klubla uyğunluq görmədim.` };
+    return { ok: false, reason: `${player.strPlayer} tapıldı, amma hər iki klubla uyğunluq görmədim. Növbəti suala hazırlaş.` };
   }
 }
 
@@ -786,15 +873,20 @@ async function finishRound(typedName) {
   document.getElementById("submitBtn").disabled = true;
 
   if (!typedName.trim()) {
-    feedback.textContent = "⏱ Vaxt bitdi.";
+    feedback.textContent = "⏱ Vaxt bitdi. Növbəti suala hazırlaş.";
     feedback.className = "feedback wrong";
 
     await postAnswer({
       playerAnswer: "",
       correctPlayer: "",
       isCorrect: false,
-      points: 0
+      points: 0,
+      skipped: true
     });
+
+    await startNextQuestionCountdown();
+
+    await buildQuestion();
 
     return;
   }
@@ -824,6 +916,12 @@ async function finishRound(typedName) {
         points
       });
 
+      await startNextQuestionCountdown();
+
+      await buildQuestion();
+
+      return;
+
     } else {
       feedback.textContent = `✘ ${result.reason}`;
       feedback.className = "feedback wrong";
@@ -835,6 +933,12 @@ async function finishRound(typedName) {
         points: 0
       });
     }
+
+    await startNextQuestionCountdown();
+
+    await buildQuestion();
+
+    return;
 
   } catch (e) {
     feedback.textContent =
@@ -850,7 +954,8 @@ async function postAnswer({
   playerAnswer = "",
   correctPlayer = "",
   isCorrect = false,
-  points = 0
+  points = 0,
+  skipped = false
 }) {
   if (!gameId || !current) {
     throw new Error("Aktiv oyun tapılmadı.");
@@ -880,7 +985,8 @@ async function postAnswer({
     player_answer: playerAnswer,
     correct_player: correctPlayer,
     is_correct: isCorrect ? 1 : 0,
-    points: points
+    points: points,
+    skipped: skipped ? 1 : 0
   };
 
   const res = await fetch("./api/game/answer.php", {
@@ -904,16 +1010,26 @@ async function postAnswer({
   }
 
   score = {
-    total: data.data.score,
+    total: data.data.game_score,
     correct: data.data.correct,
-    wrong: data.data.wrong
+    wrong: data.data.wrong,
+    totalQuestions: data.data.total_questions,
+    skipped: data.data.skipped || 0,
+    totalScore: data.data.total_score
   };
+
+
+  // İstifadəçinin bütün oyunlar üzrə ümumi xalı
+  const scoreValue = document.getElementById("scoreValue");
+
+  if (scoreValue) {
+    scoreValue.textContent = Number(data.data.total_score || 0);
+  }
 
   renderScore();
 
   return data.data;
 }
-
 
 
 function renderLeagues() {
@@ -1069,6 +1185,49 @@ document.querySelectorAll(".mode-card").forEach(btn => {
   });
 });
 
+function startQuestionTimerVisual() {
+  const nextBtn = document.getElementById("nextBtn");
+
+  if (!nextBtn) return;
+
+  nextBtn.disabled = false;
+
+  nextBtn.classList.remove("next-btn-timer");
+  nextBtn.classList.remove("next-btn-countdown");
+
+  void nextBtn.offsetWidth;
+
+  nextBtn.classList.add("next-btn-timer");
+}
+
+
+
+function startNextQuestionCountdown() {
+  const nextBtn = document.getElementById("nextBtn");
+
+  if (!nextBtn) {
+    return Promise.resolve();
+  }
+
+  nextBtn.disabled = true;
+
+  nextBtn.classList.remove("next-btn-timer");
+  nextBtn.classList.remove("next-btn-countdown");
+
+  void nextBtn.offsetWidth;
+
+  nextBtn.classList.add("next-btn-countdown");
+
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      nextBtn.classList.remove("next-btn-countdown");
+      nextBtn.disabled = false;
+
+      resolve();
+    }, 5000);
+  });
+}
+
 document.getElementById("answerForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const val = document.getElementById("answerInput").value;
@@ -1076,13 +1235,53 @@ document.getElementById("answerForm").addEventListener("submit", (e) => {
 });
 
 document.getElementById("nextBtn").addEventListener("click", async () => {
-  document.getElementById("feedback").textContent = "Sual hazırlanır...";
-  document.getElementById("feedback").className = "feedback loading";
+  const nextBtn = document.getElementById("nextBtn");
+  const feedback = document.getElementById("feedback");
+
+  if (nextBtn.disabled) {
+    return;
+  }
+
   try {
+
+    if (!answered) {
+
+      answered = true;
+      stopTimer();
+
+      document.getElementById("answerInput").disabled = true;
+      document.getElementById("submitBtn").disabled = true;
+
+      feedback.textContent = "⏭ Sual buraxıldı. Növbəti suala hazırlaş";
+      feedback.className = "feedback wrong";
+
+      await postAnswer({
+        playerAnswer: "",
+        correctPlayer: "",
+        isCorrect: false,
+        points: 0,
+        skipped: true
+      });
+
+      await startNextQuestionCountdown();
+
+      await buildQuestion();
+
+      return;
+    }
+
     await buildQuestion();
+
   } catch (e) {
-    document.getElementById("feedback").textContent = "Sual yaradıla bilmədi, yenidən cəhd et.";
-    document.getElementById("feedback").className = "feedback wrong";
+
+    console.error(e);
+
+    nextBtn.disabled = false;
+
+    feedback.textContent =
+      "Sual yaradıla bilmədi, yenidən cəhd et.";
+
+    feedback.className = "feedback wrong";
   }
 });
 

@@ -11,6 +11,10 @@
     href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.0/css/all.min.css"
+    integrity="sha512-ApSLB1Pd3/bZN8fWB/RG9YhN/7bd9Hkf3AGaE2mPfebjrxagjuBtx2GcgdqIlJkUzwylBo61r9Xa9NmgBI0swA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 
 <body>
@@ -100,7 +104,6 @@
         </button>
       </div>
 
-      <div class="score-summary" id="scoreSummary"></div>
     </section>
 
     <!-- GAME VIEW -->
@@ -137,9 +140,42 @@
 
       <div class="feedback" id="feedback"></div>
 
+      <div class="game-stats" id="gameStats">
+        <div class="game-stat">
+          <div class="game-stat-label"><i style="color: var(--primary);" class="fa-solid fa-circle-question"></i></div>
+          <div class="game-stat-value" id="gameTotalQuestions">0</div>
+          <small>sual</small>
+        </div>
+
+        <div class="game-stat">
+          <div class="game-stat-label"><i style="color: var(--accent-2);" class="fa-solid fa-circle-check"></i></div>
+          <div class="game-stat-value" id="gameCorrect">0</div>
+          <small>düz</small>
+        </div>
+
+        <div class="game-stat">
+          <div class="game-stat-label"><i style="color: var(--danger);" class="fa-solid fa-circle-xmark"></i></div>
+          <div class="game-stat-value" id="gameWrong">0</div>
+          <small>səhv</small>
+        </div>
+
+        <div class="game-stat">
+          <div class="game-stat-label"><i style="color: var(--text-dim);" class="fa-solid fa-circle-dot"></i></div>
+          <div class="game-stat-value" id="gameSkipped">0</div>
+          <small>buraxılmış</small>
+        </div>
+
+        <div class="game-stat">
+          <div class="game-stat-label"><i style="color: var(--accent);" class="fa-solid fa-coins"></i></div>
+          <div class="game-stat-value" id="gameGameScore">0</div>
+          <small>xal</small>
+        </div>
+      </div>
+
       <div class="game-actions">
-        <button class="ghost-btn" id="nextBtn">Növbəti sual →</button>
-        <button class="ghost-btn subtle" id="quitBtn">Menyuya qayıt</button>
+        <button class="ghost-btn next-btn-timer" id="nextBtn">Növbəti sual <i class="fa-solid fa-caret-right"></i></button>
+        <button class="ghost-btn subtle" id="quitBtn" style="color: var(--danger);"><i class="fa-solid fa-right-from-bracket fa-rotate-180"></i>
+          Oyundan çıx</button>
       </div>
     </section>
 

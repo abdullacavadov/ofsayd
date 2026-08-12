@@ -34,6 +34,7 @@ $playerId = isset($input['player_id']) ? (int) $input['player_id'] : null;
 $playerAnswer = trim((string) ($input['player_answer'] ?? ''));
 $correctPlayer = trim((string) ($input['correct_player'] ?? ''));
 $isCorrect = !empty($input['is_correct']) ? 1 : 0;
+$skipped = !empty($input['skipped']) ? 1 : 0;
 $points = (int) ($input['points'] ?? 0);
 
 if ($gameId <= 0) {
@@ -120,34 +121,52 @@ try {
     ]);
 
     $stmt = $pdo->prepare("
-        UPDATE games
-        SET
-            total_questions = total_questions + 1,
-            correct = correct + ?,
-            wrong = wrong + ?,
-            score = score + ?
-        WHERE id = ?
-    ");
+    UPDATE games
+    SET
+        correct = correct + ?,
+        wrong = wrong + ?,
+        skipped = skipped + ?,
+        score = score + ?
+    WHERE id = ?
+");
 
     $stmt->execute([
-        $isCorrect ? 1 : 0,
-        $isCorrect ? 0 : 1,
+        $skipped ? 0 : ($isCorrect ? 1 : 0),
+        $skipped ? 0 : ($isCorrect ? 0 : 1),
+        $skipped ? 1 : 0,
         $points,
         $gameId
     ]);
 
     $stmt = $pdo->prepare("
-        SELECT
-            total_questions,
-            correct,
-            wrong,
-            score
-        FROM games
-        WHERE id = ?
-    ");
+    SELECT
+        total_questions,
+        correct,
+        wrong,
+        skipped,
+        score
+    FROM games
+    WHERE id = ?
+");
 
     $stmt->execute([$gameId]);
-    $score = $stmt->fetch();
+
+    $gameStats = $stmt->fetch();
+
+    if (!$gameStats) {
+        throw new RuntimeException('Oyun statistikası tapılmadı.');
+    }
+
+
+    $stmt = $pdo->prepare("
+    SELECT COALESCE(SUM(points), 0)
+    FROM game_answers
+    WHERE user_id = ?
+");
+
+    $stmt->execute([$userId]);
+
+    $totalScore = (int) $stmt->fetchColumn();
 
     $pdo->commit();
 
@@ -155,10 +174,16 @@ try {
         'success' => true,
         'data' => [
             'game_id' => $gameId,
-            'total_questions' => (int) $score['total_questions'],
-            'correct' => (int) $score['correct'],
-            'wrong' => (int) $score['wrong'],
-            'score' => (int) $score['score']
+
+            // Cari oyun statistikası
+            'total_questions' => (int) $gameStats['total_questions'],
+            'correct' => (int) $gameStats['correct'],
+            'wrong' => (int) $gameStats['wrong'],
+            'skipped' => (int) $gameStats['skipped'],
+            'game_score' => (int) $gameStats['score'],
+
+            // İstifadəçinin bütün oyunlar üzrə ümumi xalı
+            'total_score' => $totalScore
         ]
     ]);
 

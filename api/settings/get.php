@@ -85,9 +85,6 @@ try {
 
 
 
-
-
-
     $stmt = $pdo->prepare("
     SELECT league_id
     FROM user_setting_leagues

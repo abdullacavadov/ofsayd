@@ -27,12 +27,12 @@ if (!in_array($mode, ['country-club', 'club-club'], true)) {
 
 try {
     $stmt = $pdo->prepare("
-    SELECT id, mode
-    FROM games
-    WHERE user_id = ?
-      AND finished_at IS NULL
-    LIMIT 1
-");
+        SELECT id, mode
+        FROM games
+        WHERE user_id = ?
+          AND finished_at IS NULL
+        LIMIT 1
+    ");
 
     $stmt->execute([$userId]);
 
@@ -46,10 +46,25 @@ try {
             ], 409);
         }
 
+        $gameId = (int) $game['id'];
+
+        $scoreStmt = $pdo->prepare("
+            SELECT COALESCE(SUM(points), 0)
+            FROM game_answers
+            WHERE user_id = ?
+        ");
+
+        $scoreStmt->execute([
+            $userId
+        ]);
+
+        $score = (int) $scoreStmt->fetchColumn();
+
         jsonResponse([
             'success' => true,
             'data' => [
-                'game_id' => (int) $game['id'],
+                'game_id' => $gameId,
+                'score' => $score,
                 'mode' => $game['mode']
             ]
         ]);
@@ -62,10 +77,13 @@ try {
 
     $stmt->execute([$userId, $mode]);
 
+    $gameId = (int) $pdo->lastInsertId();
+
     jsonResponse([
         'success' => true,
         'data' => [
-            'game_id' => (int) $pdo->lastInsertId(),
+            'game_id' => $gameId,
+            'score' => 0,
             'mode' => $mode
         ]
     ]);

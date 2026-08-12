@@ -89,6 +89,7 @@ try {
 
     $stmt = $pdo->prepare("
         INSERT INTO game_answers (
+            user_id,
             game_id,
             question_type,
             side_a,
@@ -100,10 +101,11 @@ try {
             correct_player,
             is_correct,
             points
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
+        $userId,
         $gameId,
         $questionType,
         $sideA,

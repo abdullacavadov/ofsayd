@@ -24,7 +24,8 @@ $allowedEndpoints = [
     'lookuptable.php',
     'search_all_teams.php',
     'searchplayers.php',
-    'lookupformerteams.php'
+    'lookupformerteams.php',
+    'list_league_teams.php',
 ];
 
 if (!in_array($endpoint, $allowedEndpoints, true)) {
@@ -41,6 +42,57 @@ if (!in_array($endpoint, $allowedEndpoints, true)) {
 $params = $_GET;
 
 unset($params['endpoint']);
+
+/*
+ * TheSportsDB v2:
+ * Liqanın ID-si ilə bütün komandaları götürürük.
+ */
+if ($endpoint === 'list_league_teams.php') {
+
+    $leagueId = (int) ($_GET['league_id'] ?? 0);
+
+    if ($leagueId <= 0) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'League ID düzgün göstərilməyib.'
+        ], 400);
+    }
+
+    $url = 'https://www.thesportsdb.com/api/v2/json/list/teams/'
+        . $leagueId;
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 10,
+            'ignore_errors' => true,
+            'header' => [
+                'Accept: application/json',
+                'User-Agent: Ofsayd/1.0'
+            ]
+        ]
+    ]);
+
+    $response = @file_get_contents($url, false, $context);
+
+    if ($response === false) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'TheSportsDB sorğusu uğursuz oldu.'
+        ], 502);
+    }
+
+    $data = json_decode($response, true);
+
+    if (!is_array($data)) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'TheSportsDB düzgün JSON qaytarmadı.'
+        ], 502);
+    }
+
+    jsonResponse($data);
+}
 
 try {
 

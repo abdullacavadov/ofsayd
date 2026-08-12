@@ -21,6 +21,58 @@ let answered = false;
 
 const teamsCache = {}; // leagueName -> [{name, badge}]
 
+const leagueTeamsCache = {}; // leagueId -> [{id, name, badge}]
+
+async function fetchTeamsByLeagueId(league) {
+  const cacheKey = Number(league.id);
+
+  if (leagueTeamsCache[cacheKey]) {
+    return leagueTeamsCache[cacheKey];
+  }
+
+  if (!league.api_id || !league.name) {
+    throw new Error(
+      `"${league.name || "Naməlum liqa"}" üçün liqa məlumatları natamamdır.`
+    );
+  }
+
+  const data = await apiGet("search_all_teams.php", {
+    l: league.name
+  });
+
+  if (!Array.isArray(data.teams)) {
+    console.warn(
+      `"${league.name}" üçün klub siyahısı alınmadı:`,
+      data
+    );
+
+    return [];
+  }
+
+  const teams = data.teams
+    .filter(team => team.idTeam && team.strTeam)
+    .map(team => ({
+      id: Number(team.idTeam),
+      name: team.strTeam,
+      badge: team.strBadge || team.strTeamBadge || ""
+    }));
+
+  console.log("SEÇİLMİŞ LİQA:", {
+    id: league.id,
+    api_id: league.api_id,
+    name: league.name,
+    name_az: league.name_az
+  });
+
+  console.log(
+    `"${league.name}" üçün ${teams.length} klub gəldi:`,
+    teams.map(team => team.name)
+  );
+
+  leagueTeamsCache[cacheKey] = teams;
+
+  return teams;
+}
 
 
 async function checkAuth() {
@@ -162,15 +214,6 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 });
 
 
-console.log({
-  loginForm,
-  registerForm,
-  authTitle,
-  authSubtitle,
-  authSwitchBtn,
-  authFeedback
-});
-
 
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -305,50 +348,6 @@ async function apiGet(endpoint, params = {}) {
   return data;
 }
 
-const leagueIdCache = {}; // countryKey -> resolved idLeague
-
-async function resolveLeagueId(country) {
-  if (country.leagueId) return country.leagueId;
-  if (leagueIdCache[country.key]) return leagueIdCache[country.key];
-  const data = await apiGet("search_all_leagues.php", { c: country.key, s: "Soccer" });
-  const leagues = data.countrys || data.leagues || [];
-  const top = leagues.find(l => /premier|liga|liga|super|top|division 1|1\. liga/i.test(l.strLeague || "")) || leagues[0];
-  if (top && top.idLeague) {
-    leagueIdCache[country.key] = top.idLeague;
-    return top.idLeague;
-  }
-  return null;
-}
-
-async function fetchTeamsByLeague(country) {
-  if (teamsCache[country.key]) return teamsCache[country.key];
-
-  let teams = [];
-
-  // 1-ci yol: liqa ID-si ilə cari cədvəl (ən dəqiq divizion filtri)
-  try {
-    const idLeague = await resolveLeagueId(country);
-    if (idLeague) {
-      const table = await apiGet("lookuptable.php", { l: idLeague });
-      teams = (table.table || [])
-        .filter(t => t.strTeam && t.strBadge)
-        .map(t => ({ id: t.idTeam, name: t.strTeam, badge: t.strBadge.replace(/\/tiny$/, "") }));
-    }
-  } catch (e) { /* aşağıdakı fallback-ə keç */ }
-
-  // 2-ci yol: cədvəl boşdursa, ölkə üzrə komanda axtarışına keç
-  if (!teams.length) {
-    const data = await apiGet("search_all_teams.php", { c: country.key, s: "Soccer" });
-    teams = (data.teams || [])
-      .filter(t => t.strTeam && t.strTeamBadge)
-      .map(t => ({ id: t.idTeam, name: t.strTeam, badge: t.strTeamBadge }));
-  }
-
-  teamsCache[country.key] = teams;
-  console.log(`"${country.key}" üçün tapılan komandalar:`, teams.length, teams);
-  return teams;
-}
-
 async function searchPlayer(name) {
   const data = await apiGet("searchplayers.php", { p: name });
   return (data.player || [])[0] || null;
@@ -365,34 +364,64 @@ function randomFrom(arr) {
 }
 
 async function randomClub(allowedCountries) {
-  const pool = allowedCountries.length
-    ? allowedCountries
-    : COUNTRIES;
+  const selectedLeagueIds = new Set(
+    (settings.selectedLeagues || []).map(id => Number(id))
+  );
+
+  const allowedCountryIds = new Set(
+    (allowedCountries || []).map(country => Number(country.id))
+  );
+
+  const availableLeagues = (settings.leagues || []).filter(league => {
+    const leagueId = Number(league.id);
+    const countryId = Number(league.country_id);
+
+    return (
+      selectedLeagueIds.has(leagueId) &&
+      allowedCountryIds.has(countryId)
+    );
+  });
+
+  if (!availableLeagues.length) {
+    throw new Error(
+      "Seçilmiş ölkələr üzrə heç bir liqa seçilməyib."
+    );
+  }
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const country = randomFrom(pool);
+    const league = randomFrom(availableLeagues);
 
-    if (!country) continue;
+    if (!league) continue;
 
     try {
-      const teams = await fetchTeamsByLeague(country);
+      const teams = await fetchTeamsByLeagueId(league);
 
-      if (teams.length) {
-        return {
-          club: randomFrom(teams),
-          country
-        };
+      if (!teams.length) {
+        continue;
       }
+
+      const club = randomFrom(teams);
+
+      const country = (allowedCountries || []).find(
+        c => Number(c.id) === Number(league.country_id)
+      );
+
+      return {
+        club,
+        country,
+        league
+      };
+
     } catch (e) {
       console.warn(
-        `"${country.key}" üçün klub tapılmadı:`,
+        `"${league.name}" liqasından klublar alınmadı:`,
         e
       );
     }
   }
 
   throw new Error(
-    "Klub tapılmadı — tənzimləmələrdə daha çox ölkə seç."
+    "Seçilmiş liqalardan klub tapılmadı."
   );
 }
 
@@ -521,6 +550,13 @@ async function startGame(gameMode) {
   }
 
   gameId = Number(data.data.game_id);
+
+  const scoreValue = document.getElementById("scoreValue");
+
+  if (scoreValue) {
+    scoreValue.textContent = Number(data.data.score || 0);
+  }
+
   return true;
 }
 
@@ -599,15 +635,46 @@ async function buildQuestion() {
   document.getElementById("submitBtn").disabled = false;
 
   if (mode === "country-club") {
-    if (!settings.nationalTeams.length || !settings.clubCountries.length) {
-      feedback.textContent = "Tənzimləmələrdə ən azı bir ölkə yığması və bir klub ölkəsi seç.";
+
+    if (!settings.nationalTeams.length) {
+      feedback.textContent =
+        "Tənzimləmələrdə ən azı bir milli komanda ölkəsi seç.";
+
       feedback.className = "feedback wrong";
       return;
     }
-    const nation = randomFrom(settings.nationalTeams);
-    const { club } = await randomClub(settings.clubCountries);
 
-    current = { type: "country-club", nation, club };
+    if (!settings.clubCountries.length) {
+      feedback.textContent =
+        "Tənzimləmələrdə ən azı bir klub ölkəsi seç.";
+
+      feedback.className = "feedback wrong";
+      return;
+    }
+
+    if (!settings.selectedLeagues || !settings.selectedLeagues.length) {
+      feedback.textContent =
+        "Tənzimləmələrdə ən azı bir liqa seç.";
+
+      feedback.className = "feedback wrong";
+      return;
+    }
+
+    const nation = randomFrom(settings.nationalTeams);
+
+    const {
+      club,
+      country,
+      league
+    } = await randomClub(settings.clubCountries);
+
+    current = {
+      type: "country-club",
+      nation,
+      club,
+      country,
+      league
+    };
 
     document.getElementById("sideAImg").src = `https://flagcdn.com/${nation.flag}.svg`;
     document.getElementById("sideAImg").alt = nation.az;
@@ -619,18 +686,45 @@ async function buildQuestion() {
     document.getElementById("sideBName").textContent = club.name;
     document.getElementById("sideBTag").textContent = "Klub";
   } else {
+
     if (!settings.clubCountries.length) {
-      feedback.textContent = "Tənzimləmələrdə ən azı bir klub ölkəsi seç.";
+      feedback.textContent =
+        "Tənzimləmələrdə ən azı bir klub ölkəsi seç.";
+
       feedback.className = "feedback wrong";
       return;
     }
-    let clubA, clubB;
-    do {
-      clubA = (await randomClub(settings.clubCountries)).club;
-      clubB = (await randomClub(settings.clubCountries)).club;
-    } while (normalize(clubA.name) === normalize(clubB.name));
 
-    current = { type: "club-club", clubA, clubB };
+    if (!settings.selectedLeagues || !settings.selectedLeagues.length) {
+      feedback.textContent =
+        "Tənzimləmələrdə ən azı bir liqa seç.";
+
+      feedback.className = "feedback wrong";
+      return;
+    }
+
+    let resultA;
+    let resultB;
+
+    do {
+      resultA = await randomClub(settings.clubCountries);
+      resultB = await randomClub(settings.clubCountries);
+    } while (
+      normalize(resultA.club.name) === normalize(resultB.club.name)
+    );
+
+    const clubA = resultA.club;
+    const clubB = resultB.club;
+
+    current = {
+      type: "club-club",
+      clubA,
+      clubB,
+      leagueA: resultA.league,
+      leagueB: resultB.league,
+      countryA: resultA.country,
+      countryB: resultB.country
+    };
 
     document.getElementById("sideAImg").src = clubA.badge;
     document.getElementById("sideAImg").alt = clubA.name;

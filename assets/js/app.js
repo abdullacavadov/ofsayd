@@ -852,11 +852,21 @@ function renderLeagues() {
     checkbox.className = "league-checkbox";
     checkbox.checked = selectedLeagueIds.has(Number(league.id));
 
-    const span = document.createElement("span");
+    const img = document.createElement("img");
+    img.className = "setting-icon league-banner";
+    img.src = league.banner ? `https://r2.thesportsdb.com/images/media/league/badge/${league.banner}.png/small` : "";
+    img.alt = league.name_az || league.name;
+    img.loading = "lazy";
 
+    const span = document.createElement("span");
     span.textContent = league.name_az || league.name;
 
     label.appendChild(checkbox);
+
+    if (league.banner) {
+      label.appendChild(img);
+    }
+
     label.appendChild(span);
 
     container.appendChild(label);
@@ -886,10 +896,17 @@ function renderCheckboxList(containerId, selectedCountries) {
     input.value = country.id;
     input.checked = selectedIds.has(country.id);
 
+    const img = document.createElement("img");
+    img.className = "setting-icon country-flag";
+    img.src = `https://flagcdn.com/w40/${country.flag}.png`;
+    img.alt = country.az;
+    img.loading = "lazy";
+
     const span = document.createElement("span");
     span.textContent = country.az;
 
     label.appendChild(input);
+    label.appendChild(img);
     label.appendChild(span);
 
     container.appendChild(label);

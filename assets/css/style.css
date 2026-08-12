@@ -500,6 +500,23 @@ main#app {
   height: 16px;
 }
 
+
+.setting-icon {
+  width: 32px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.country-flag {
+  border-radius: 3px;
+}
+
+.league-banner {
+  width: 36px;
+  height: 28px;
+}
+
 .settings-actions {
   margin-top: 28px;
   display: flex;

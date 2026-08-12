@@ -73,6 +73,7 @@ try {
         l.name,
         l.name_az,
         l.sport,
+        l.banner,
         l.is_top_tier,
         l.is_active
     FROM leagues l

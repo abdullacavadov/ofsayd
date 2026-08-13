@@ -532,6 +532,14 @@ async function loadSettings() {
 
   settings = data.data;
 
+  settings.availableClubCountries = settings.availableClubCountries.map(c => ({
+    id: Number(c.id),
+    key: c.api_key,
+    az: c.name_az,
+    flag: c.flag,
+    leagueId: null
+  }));
+
   COUNTRIES = settings.countries.map(c => ({
     id: Number(c.id),
     key: c.api_key,
@@ -559,6 +567,12 @@ async function loadSettings() {
     flag: c.flag,
     leagueId: null
   }));
+
+  settings.selectedClubCountries =
+    settings.selectedClubCountries.map(Number);
+
+  settings.selectedNationalTeams =
+    settings.selectedNationalTeams.map(Number);
 
   renderLeagues();
 }
@@ -1087,16 +1101,20 @@ function renderLeagues() {
 
 
 // ---------- Tənzimləmələr ekranı ----------
-function renderCheckboxList(containerId, selectedCountries) {
+function renderCheckboxList(
+  containerId,
+  countries,
+  selectedIds
+) {
   const container = document.getElementById(containerId);
 
   container.innerHTML = "";
 
-  const selectedIds = new Set(
-    selectedCountries.map(c => Number(c.id))
+  const selected = new Set(
+    selectedIds.map(Number)
   );
 
-  COUNTRIES.forEach(country => {
+  countries.forEach(country => {
     const label = document.createElement("label");
     label.className = "checkbox-row";
 
@@ -1104,7 +1122,7 @@ function renderCheckboxList(containerId, selectedCountries) {
 
     input.type = "checkbox";
     input.value = country.id;
-    input.checked = selectedIds.has(country.id);
+    input.checked = selected.has(Number(country.id));
 
     const img = document.createElement("img");
     img.className = "setting-icon country-flag";
@@ -1129,6 +1147,7 @@ function renderCheckboxList(containerId, selectedCountries) {
   });
 }
 
+
 function collectChecked(containerId) {
   return Array.from(document.querySelectorAll(`#${containerId} input:checked`)).map(i => i.value);
 }
@@ -1138,12 +1157,14 @@ async function openSettings() {
 
   renderCheckboxList(
     "clubCountryList",
-    settings.clubCountries
+    settings.clubCountries,
+    settings.selectedClubCountries
   );
 
   renderCheckboxList(
     "nationalTeamList",
-    settings.nationalTeams
+    settings.nationalTeams,
+    settings.selectedNationalTeams
   );
 
   renderLeagues();

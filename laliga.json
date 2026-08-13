@@ -1,0 +1,122 @@
+[
+  {
+    "league_id": 102,
+    "team_api_id": 134221,
+    "team_name": "Deportivo Alavés",
+    "team_badge": "mfn99h1734673842"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133816,
+    "team_name": "Deportivo La Coruña",
+    "team_badge": "62bvwv1783013156"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133727,
+    "team_name": "Athletic Bilbao",
+    "team_badge": "68w7fe1639408210"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133729,
+    "team_name": "Atlético Madrid",
+    "team_badge": "0ulh3q1719984315"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133739,
+    "team_name": "FC Barcelona",
+    "team_badge": "wq9sir1639406443"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 134384,
+    "team_name": "Elche",
+    "team_badge": "e4vaw51655594332"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133937,
+    "team_name": "Celta Vigo",
+    "team_badge": "xfjtku1690436219"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133734,
+    "team_name": "Espanyol",
+    "team_badge": "867nzz1681703222"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133731,
+    "team_name": "Getafe CF",
+    "team_badge": "eyh2891655594452"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133732,
+    "team_name": "Levante",
+    "team_badge": "xwtxsx1473503739"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133736,
+    "team_name": "Málaga",
+    "team_badge": "upqyvr1473502952"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133730,
+    "team_name": "CA Osasuna",
+    "team_badge": "rvspvt1473502960"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133726,
+    "team_name": "Racing de Santander",
+    "team_badge": "97kkiq1536575158"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133728,
+    "team_name": "Rayo Vallecano",
+    "team_badge": "nzhu941655595465"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133722,
+    "team_name": "Real Betis",
+    "team_badge": "2oqulv1663245386"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133738,
+    "team_name": "Real Madrid",
+    "team_badge": "vwvwrw1473502969"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133724,
+    "team_name": "Real Sociedad",
+    "team_badge": "vptvpr1473502986"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133735,
+    "team_name": "Sevilla FC",
+    "team_badge": "vpsqqx1473502977"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133725,
+    "team_name": "Valencia CF",
+    "team_badge": "dm8l6o1655594864"
+  },
+  {
+    "league_id": 102,
+    "team_api_id": 133740,
+    "team_name": "Villarreal CF",
+    "team_badge": "vrypqy1473503073"
+  }
+]

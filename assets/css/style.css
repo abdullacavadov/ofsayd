@@ -476,7 +476,7 @@ main#app {
 
 .next-btn-countdown::after {
   clip-path: inset(0 100% 0 0);
-  animation: nextBtnCountdown 5s linear forwards;
+  animation: nextBtnCountdown 3s linear forwards;
 }
 
 @keyframes nextBtnTimer {

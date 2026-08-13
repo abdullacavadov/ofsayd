@@ -532,7 +532,7 @@ async function loadSettings() {
 
   settings = data.data;
 
-  settings.availableClubCountries = settings.availableClubCountries.map(c => ({
+  settings.clubCountries = settings.clubCountries.map(c => ({
     id: Number(c.id),
     key: c.api_key,
     az: c.name_az,
@@ -689,7 +689,10 @@ async function buildQuestion() {
 
   if (mode === "country-club") {
 
-    if (!settings.nationalTeams.length) {
+    if (
+      !settings.selectedNationalTeams ||
+      !settings.selectedNationalTeams.length
+    ) {
       feedback.textContent =
         "Tənzimləmələrdə ən azı bir milli komanda ölkəsi seç.";
 
@@ -713,7 +716,11 @@ async function buildQuestion() {
       return;
     }
 
-    const nation = randomFrom(settings.nationalTeams);
+    const selectedNationalTeams = settings.nationalTeams.filter(
+      country => settings.selectedNationalTeams.includes(Number(country.id))
+    );
+
+    const nation = randomFrom(selectedNationalTeams);
 
     const {
       club,
@@ -1245,7 +1252,7 @@ function startNextQuestionCountdown() {
       nextBtn.disabled = false;
 
       resolve();
-    }, 5000);
+    }, 3000);
   });
 }
 

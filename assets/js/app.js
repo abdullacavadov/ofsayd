@@ -20,8 +20,8 @@ let timeLeft = 10;
 let answered = false;
 
 const teamsCache = {}; // leagueName -> [{name, badge}]
-
 const leagueTeamsCache = {}; // leagueId -> [{id, name, badge}]
+let allLeagueTeamsLoaded = false;
 
 async function fetchTeamsByLeagueId(league) {
   const cacheKey = Number(league.id);
@@ -30,48 +30,42 @@ async function fetchTeamsByLeagueId(league) {
     return leagueTeamsCache[cacheKey];
   }
 
-  if (!league.api_id || !league.name) {
-    throw new Error(
-      `"${league.name || "Naməlum liqa"}" üçün liqa məlumatları natamamdır.`
-    );
+  if (!allLeagueTeamsLoaded) {
+    const res = await fetch("./api/game/teams.php", {
+      credentials: "same-origin"
+    });
+
+    if (res.status === 401) {
+      showAuth("login");
+      return [];
+    }
+
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "Klub məlumatları alınmadı."
+      );
+    }
+
+    data.data.forEach(team => {
+      const leagueId = Number(team.league_id);
+
+      if (!leagueTeamsCache[leagueId]) {
+        leagueTeamsCache[leagueId] = [];
+      }
+
+      leagueTeamsCache[leagueId].push({
+        id: Number(team.team_api_id),
+        name: team.team_name,
+        badge: team.team_badge || ""
+      });
+    });
+
+    allLeagueTeamsLoaded = true;
   }
 
-  const data = await apiGet("search_all_teams.php", {
-    l: league.name
-  });
-
-  if (!Array.isArray(data.teams)) {
-    console.warn(
-      `"${league.name}" üçün klub siyahısı alınmadı:`,
-      data
-    );
-
-    return [];
-  }
-
-  const teams = data.teams
-    .filter(team => team.idTeam && team.strTeam)
-    .map(team => ({
-      id: Number(team.idTeam),
-      name: team.strTeam,
-      badge: team.strBadge || team.strTeamBadge || ""
-    }));
-
-  console.log("SEÇİLMİŞ LİQA:", {
-    id: league.id,
-    api_id: league.api_id,
-    name: league.name,
-    name_az: league.name_az
-  });
-
-  console.log(
-    `"${league.name}" üçün ${teams.length} klub gəldi:`,
-    teams.map(team => team.name)
-  );
-
-  leagueTeamsCache[cacheKey] = teams;
-
-  return teams;
+  return leagueTeamsCache[cacheKey] || [];
 }
 
 
@@ -741,7 +735,7 @@ async function buildQuestion() {
     document.getElementById("sideAName").textContent = nation.az;
     document.getElementById("sideATag").textContent = "Ölkə";
 
-    document.getElementById("sideBImg").src = club.badge;
+    document.getElementById("sideBImg").src = `https://r2.thesportsdb.com/images/media/team/badge/${club.badge}.png/medium`;
     document.getElementById("sideBImg").alt = club.name;
     document.getElementById("sideBName").textContent = club.name;
     document.getElementById("sideBTag").textContent = "Klub";
@@ -786,12 +780,12 @@ async function buildQuestion() {
       countryB: resultB.country
     };
 
-    document.getElementById("sideAImg").src = clubA.badge;
+    document.getElementById("sideAImg").src = `https://r2.thesportsdb.com/images/media/team/badge/${clubA.badge}.png/medium`;
     document.getElementById("sideAImg").alt = clubA.name;
     document.getElementById("sideAName").textContent = clubA.name;
     document.getElementById("sideATag").textContent = "Klub";
 
-    document.getElementById("sideBImg").src = clubB.badge;
+    document.getElementById("sideBImg").src = `https://r2.thesportsdb.com/images/media/team/badge/${clubB.badge}.png/medium`;
     document.getElementById("sideBImg").alt = clubB.name;
     document.getElementById("sideBName").textContent = clubB.name;
     document.getElementById("sideBTag").textContent = "Klub";

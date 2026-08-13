@@ -25,6 +25,7 @@ $allowedEndpoints = [
     'search_all_teams.php',
     'searchplayers.php',
     'lookupformerteams.php',
+    'lookup_all_players.php',
     'list_league_teams.php',
 ];
 

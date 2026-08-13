@@ -347,6 +347,8 @@ async function searchPlayer(name) {
   return data.player || [];
 }
 
+searchPlayer("Raul").then(console.log)
+
 async function fetchFormerTeams(playerId) {
   const data = await apiGet("lookupformerteams.php", { id: playerId });
   return (data.formerteams || []).map(t => t.strFormerTeam).filter(Boolean);

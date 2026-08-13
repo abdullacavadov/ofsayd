@@ -344,7 +344,7 @@ async function apiGet(endpoint, params = {}) {
 
 async function searchPlayer(name) {
   const data = await apiGet("searchplayers.php", { p: name });
-  return (data.player || [])[0] || null;
+  return data.player || [];
 }
 
 async function fetchFormerTeams(playerId) {
@@ -842,52 +842,252 @@ async function buildQuestion() {
   startTimer(() => finishRound(""));
 }
 
-// ---------- Cavabın yoxlanılması ----------
-async function verifyAnswer(playerName) {
-  if (!playerName.trim()) return { ok: false, reason: "Cavab boş idi." };
 
-  const player = await searchPlayer(playerName.trim());
-  if (!player) return { ok: false, reason: "Bu adda oyunçu tapılmadı. Növbəti suala hazırlaş" };
 
-  if (current.type === "country-club") {
-    const nationOk = namesMatch(player.strNationality, current.nation.key);
-    let clubOk = teamNameMatches(player.strTeam || "", current.club.name);
-    if (!clubOk && player.idPlayer) {
-      try {
-        const former = await fetchFormerTeams(player.idPlayer);
-        clubOk = former.some(t => teamNameMatches(t, current.club.name));
-      } catch (e) { /* former teams alınmadı, davam et */ }
-    }
-    if (nationOk && clubOk) return { ok: true, player };
-    if (!nationOk) return { ok: false, reason: `${player.strPlayer} tapıldı, amma millət uyğun gəlmədi. Növbəti suala hazırlaş.` };
-    return { ok: false, reason: `${player.strPlayer} tapıldı, amma bu klubda oynadığı görünmür. Növbəti suala hazırlaş.` };
-  } else {
-    const teams = [player.strTeam || ""];
-    if (player.idPlayer) {
-      try {
-        const former = await fetchFormerTeams(player.idPlayer);
-        teams.push(...former);
-      } catch (e) { /* former teams alınmadı, cari komanda ilə davam */ }
-    }
-    const matchA = teams.some(t => teamNameMatches(t, current.clubA.name));
-    const matchB = teams.some(t => teamNameMatches(t, current.clubB.name));
-    if (matchA && matchB) return { ok: true, player };
-    return { ok: false, reason: `${player.strPlayer} tapıldı, amma hər iki klubla uyğunluq görmədim. Növbəti suala hazırlaş.` };
+async function resolvePlayerAnswer(playerName) {
+  const players = await searchPlayer(playerName.trim());
+
+  if (!players.length) {
+    return {
+      player: null,
+      reason: "Bu adda oyunçu tapılmadı. Növbəti suala hazırlaş."
+    };
+  }
+
+  if (players.length === 1) {
+    return {
+      player: players[0],
+      reason: ""
+    };
+  }
+
+  // Bir neçə nəticə olduqda xüsusi vəziyyət qaytarırıq.
+  return {
+    player: null,
+    candidates: players,
+    reason: "Bir neçə futbolçu tapıldı."
+  };
+}
+
+
+let playerModalOpen = false;
+let playerModalTypedName = "";
+
+function closePlayerSelectionModal() {
+  const modal = document.getElementById("playerSelectionModal");
+
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  playerModalOpen = false;
+  playerModalTypedName = "";
+
+  const candidatesEl = document.getElementById("playerCandidates");
+
+  if (candidatesEl) {
+    candidatesEl.innerHTML = "";
   }
 }
 
-async function finishRound(typedName) {
-  if (answered) return;
+function createPlayerCandidate(player) {
+  const button = document.createElement("button");
 
-  answered = true;
-  stopTimer();
+  button.type = "button";
+  button.className = "player-candidate";
+
+  const image = document.createElement("img");
+  image.className = "player-candidate-img";
+
+  if (player.strThumb) {
+    image.src = player.strThumb;
+  } else {
+    image.style.display = "none";
+  }
+
+  image.alt = player.strPlayer || "Futbolçu";
+
+  const info = document.createElement("div");
+  info.className = "player-candidate-info";
+
+  const name = document.createElement("div");
+  name.className = "player-candidate-name";
+  name.textContent = player.strPlayer || "Naməlum futbolçu";
+
+  const meta = document.createElement("div");
+  meta.className = "player-candidate-meta";
+
+  const nationality = player.strNationality || "";
+  const team = player.strTeam || "";
+
+  if (nationality && team) {
+    meta.textContent = `${nationality} · ${team}`;
+  } else {
+    meta.textContent = nationality || team || "";
+  }
+
+  info.appendChild(name);
+  info.appendChild(meta);
+
+  button.appendChild(image);
+  button.appendChild(info);
+
+  button.addEventListener("click", async () => {
+    closePlayerSelectionModal();
+
+    const selectedPlayer = player;
+    const typedName = playerModalTypedName;
+
+    await finishRound(typedName, selectedPlayer);
+  });
+
+  return button;
+}
+
+function openPlayerSelectionModal(players, typedName) {
+  const modal = document.getElementById("playerSelectionModal");
+  const candidatesEl = document.getElementById("playerCandidates");
+
+  if (!modal || !candidatesEl) {
+    throw new Error("Futbolçu seçim modalı tapılmadı.");
+  }
+
+  playerModalOpen = true;
+  playerModalTypedName = typedName;
+
+  candidatesEl.innerHTML = "";
+
+  players.forEach(player => {
+    candidatesEl.appendChild(
+      createPlayerCandidate(player)
+    );
+  });
+
+  modal.classList.remove("hidden");
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("playerModalClose");
+  const backdrop = document.querySelector(".player-modal-backdrop");
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      closePlayerSelectionModal();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", () => {
+      closePlayerSelectionModal();
+    });
+  }
+});
+
+
+// ---------- Cavabın yoxlanılması ----------
+async function verifyAnswer(player) {
+  if (!player) {
+    return {
+      ok: false,
+      reason: "Futbolçu tapılmadı."
+    };
+  }
+
+  if (current.type === "country-club") {
+    const nationOk = namesMatch(
+      player.strNationality,
+      current.nation.key
+    );
+
+    let clubOk = teamNameMatches(
+      player.strTeam || "",
+      current.club.name
+    );
+
+    if (!clubOk && player.idPlayer) {
+      try {
+        const former = await fetchFormerTeams(player.idPlayer);
+
+        clubOk = former.some(t =>
+          teamNameMatches(t, current.club.name)
+        );
+      } catch (e) {
+        // Former teams alınmadı, cari komanda ilə davam et
+      }
+    }
+
+    if (nationOk && clubOk) {
+      return {
+        ok: true,
+        player
+      };
+    }
+
+    if (!nationOk) {
+      return {
+        ok: false,
+        player,
+        reason: `${player.strPlayer} tapıldı, amma millət uyğun gəlmədi. Növbəti suala hazırlaş.`
+      };
+    }
+
+    return {
+      ok: false,
+      player,
+      reason: `${player.strPlayer} tapıldı, amma bu klubda oynadığı görünmür. Növbəti suala hazırlaş.`
+    };
+
+  } else {
+    const teams = [
+      player.strTeam || ""
+    ];
+
+    if (player.idPlayer) {
+      try {
+        const former = await fetchFormerTeams(player.idPlayer);
+
+        teams.push(...former);
+      } catch (e) {
+        // Former teams alınmadı, cari komanda ilə davam
+      }
+    }
+
+    const matchA = teams.some(t =>
+      teamNameMatches(t, current.clubA.name)
+    );
+
+    const matchB = teams.some(t =>
+      teamNameMatches(t, current.clubB.name)
+    );
+
+    if (matchA && matchB) {
+      return {
+        ok: true,
+        player
+      };
+    }
+
+    return {
+      ok: false,
+      player,
+      reason: `${player.strPlayer} tapıldı, amma hər iki klubla uyğunluq görmədim. Növbəti suala hazırlaş.`
+    };
+  }
+}
+
+
+async function finishRound(typedName, selectedPlayer = null) {
+  if (answered) return;
 
   const feedback = document.getElementById("feedback");
 
-  document.getElementById("answerInput").disabled = true;
-  document.getElementById("submitBtn").disabled = true;
-
   if (!typedName.trim()) {
+    answered = true;
+    stopTimer();
+
+    document.getElementById("answerInput").disabled = true;
+    document.getElementById("submitBtn").disabled = true;
+
     feedback.textContent = "⏱ Vaxt bitdi. Növbəti suala hazırlaş.";
     feedback.className = "feedback wrong";
 
@@ -906,11 +1106,95 @@ async function finishRound(typedName) {
     return;
   }
 
+  /*
+   * Əgər player əvvəlcədən seçilibsə,
+   * artıq searchPlayer() çağırmağa ehtiyac yoxdur.
+   */
+  if (!selectedPlayer) {
+    feedback.textContent = "Yoxlanılır...";
+    feedback.className = "feedback loading";
+
+    try {
+      const resolved = await resolvePlayerAnswer(typedName);
+
+      if (!resolved.player && resolved.candidates) {
+        /*
+         * Bir neçə namizəd var.
+         *
+         * Burada answered = true ETMİRİK.
+         * Sadəcə timeri dayandırıb modalı açırıq.
+         */
+        stopTimer();
+
+        feedback.textContent =
+          "Futbolçunu siyahıdan seç.";
+        feedback.className = "feedback loading";
+
+        document.getElementById("answerInput").disabled = true;
+        document.getElementById("submitBtn").disabled = true;
+
+        openPlayerSelectionModal(
+          resolved.candidates,
+          typedName
+        );
+
+        return;
+      }
+
+      if (!resolved.player) {
+        answered = true;
+        stopTimer();
+
+        document.getElementById("answerInput").disabled = true;
+        document.getElementById("submitBtn").disabled = true;
+
+        feedback.textContent = resolved.reason;
+        feedback.className = "feedback wrong";
+
+        await postAnswer({
+          playerAnswer: typedName,
+          correctPlayer: "",
+          isCorrect: false,
+          points: 0,
+          skipped: false
+        });
+
+        await startNextQuestionCountdown();
+
+        await buildQuestion();
+
+        return;
+      }
+
+      selectedPlayer = resolved.player;
+
+    } catch (e) {
+      feedback.textContent =
+        "API-yə çatmaq mümkün olmadı, bir az sonra yenidən cəhd et.";
+
+      feedback.className = "feedback wrong";
+
+      console.error(e);
+
+      return;
+    }
+  }
+
+  /*
+   * Bu nöqtəyə çatmışıqsa artıq konkret futbolçu məlumdur.
+   * Raundu bağlayırıq.
+   */
+  answered = true;
+  stopTimer();
+
+  document.getElementById("answerInput").disabled = true;
+  document.getElementById("submitBtn").disabled = true;
+
   feedback.textContent = "Yoxlanılır...";
   feedback.className = "feedback loading";
 
   try {
-    const result = await verifyAnswer(typedName);
+    const result = await verifyAnswer(selectedPlayer);
 
     if (result.ok) {
       const bonus = Math.max(0, Math.round(timeLeft * 5));
@@ -938,10 +1222,15 @@ async function finishRound(typedName) {
       return;
 
     } else {
-      feedback.textContent = `✘ ${result.reason}`;
+      feedback.textContent =
+        `✘ ${result.reason}`;
+
       feedback.className = "feedback wrong";
 
       await postAnswer({
+        playerId: result.player?.idPlayer
+          ? Number(result.player.idPlayer)
+          : null,
         playerAnswer: typedName,
         correctPlayer: "",
         isCorrect: false,
@@ -953,13 +1242,12 @@ async function finishRound(typedName) {
 
     await buildQuestion();
 
-    return;
-
   } catch (e) {
     feedback.textContent =
       "API-yə çatmaq mümkün olmadı, bir az sonra yenidən cəhd et.";
 
     feedback.className = "feedback wrong";
+
     console.error(e);
   }
 }

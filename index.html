@@ -173,11 +173,36 @@
       </div>
 
       <div class="game-actions">
-        <button class="ghost-btn next-btn-timer" id="nextBtn">Növbəti sual <i class="fa-solid fa-caret-right"></i></button>
-        <button class="ghost-btn subtle" id="quitBtn" style="color: var(--danger);"><i class="fa-solid fa-right-from-bracket fa-rotate-180"></i>
+        <button class="ghost-btn next-btn-timer" id="nextBtn">Növbəti sual <i
+            class="fa-solid fa-caret-right"></i></button>
+        <button class="ghost-btn subtle" id="quitBtn" style="color: var(--danger);"><i
+            class="fa-solid fa-right-from-bracket fa-rotate-180"></i>
           Oyundan çıx</button>
       </div>
     </section>
+
+
+    <!-- PLAYER SELECTION MODAL -->
+    <div id="playerSelectionModal" class="player-modal hidden">
+      <div class="player-modal-backdrop"></div>
+
+      <div class="player-modal-content">
+        <div class="player-modal-header">
+          <div>
+            <p class="eyebrow">Futbolçu seçimi</p>
+            <h2 class="player-modal-title">
+              Hansı futbolçunu nəzərdə tutursan?
+            </h2>
+          </div>
+
+          <button type="button" class="player-modal-close" id="playerModalClose" aria-label="Bağla">
+            ×
+          </button>
+        </div>
+
+        <div class="player-candidates" id="playerCandidates"></div>
+      </div>
+    </div>
 
     <!-- SETTINGS VIEW -->
     <section id="settingsView" class="view hidden">
